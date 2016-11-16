@@ -7,7 +7,7 @@
  * __________________HEADER_____________________
  * |__START__|__SIZE__|_DESCRIPTIONS_|_OPTIONS_|
  * |0        |16      |guid          |ro       |
- * |16       |2       |require temp  |ro       |
+ * |16       |2       |require temp  |rw       |
  * |18       |1       |sensors count |ro       |
  * |19       |2       |[res]stat&ctl |rw       |
  * ---------------------------------------------
@@ -31,19 +31,13 @@
  *
  */
 
-/* EEPROM Memory Map
- *
- *
- *
- */
+
 
 namespace memory
 {
-
 void write(uint8_t addr, uint8_t data);
 uint8_t read(uint8_t addr);
 uint16_t mapsize();
-
 }
 
 #endif
