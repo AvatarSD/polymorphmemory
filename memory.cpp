@@ -56,7 +56,65 @@ struct Main {
     uint8_t _res_ [14];
     Node nodes[20];
 };
+*/
 
+template <typename Reg, typename...Regs>
+class Composite
+{
+public:
+
+    static int8_t write(uint8_t addr, uint8_t data)
+    {
+        return -1;
+    }
+
+
+    static int16_t read(uint8_t addr)
+    {
+        return -1;
+    }
+
+
+
+
+private:
+
+    static constexpr inline size_t _size()
+    {
+        return 0;
+    }
+    template <typename Head, typename... Tail>
+    static constexpr inline size_t _size(/*const Head &
+                                         head, const Tail & ... tail*/)
+    {
+        return sizeof(Head) + _size<Head, Tail...>();  //(tail...);
+    }
+    static constexpr inline size_t size()
+    {
+        return _size<Reg, Regs...>();
+    }
+
+    uint8_t t[size()]; //_size(Reg, Regs...)];
+};
+
+template<typename Registers, size_t count>
+class CompositeList : Composite<Registers[count]>
+{
+
+    template<typename reg1, typename ...regs>
+    static int8_t write(uint8_t addr, uint8_t data) final {
+        return write(sizeof(reg1) % addr, data, sizeof(reg1) / addr);
+    }
+
+    template<typename reg1, typename ...regs>
+    static int8_t read(uint8_t addr) final {}
+
+
+};
+
+
+
+/*
 Main eemap EEMEM;
 
 //volatile uint8_t i2c_regs[] = {
