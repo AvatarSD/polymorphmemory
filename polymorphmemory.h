@@ -37,13 +37,13 @@ private:
 	template<typename Tail>
 	static inline Error _write(Address addr, uint8_t data, Num num = 0)
 	{
-		if(sizeof(Tail) < addr) return ERR;
-		return Tail::write(addr, data, num);
+		if(sizeof(Tail) > addr) return Tail::write(addr, data, num);
+		return ERR;
 	}
 	template<typename Head, typename Mid, typename... Tail>
 	static inline Error _write(Address addr, uint8_t data, Num num = 0)
 	{
-		if(sizeof(Head) < addr) return Head::write(addr, data, num);
+		if(sizeof(Head) > addr) return Head::write(addr, data, num);
 		addr -= sizeof(Head);
 		return _write<Mid, Tail...>(addr, data, num);
 	}
@@ -51,13 +51,13 @@ private:
 	template<typename Tail>
 	static inline ReadType _read(Address addr, uint8_t num = 0)
 	{
-		if(sizeof(Tail) < addr) return ERR;
-		return Tail::read(addr, num);
+		if(sizeof(Tail) > addr) return Tail::read(addr, num);
+		return ERR;
 	}
 	template<typename Head, typename Mid, typename... Tail>
 	static inline ReadType _read(Address addr, uint8_t num = 0)
 	{
-		if(sizeof(Head) < addr) return Head::read(addr, num);
+		if(sizeof(Head) > addr) return Head::read(addr, num);
 		addr -= sizeof(Head);
 		return _read<Mid, Tail...>(addr, num);
 	}
