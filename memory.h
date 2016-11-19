@@ -35,8 +35,8 @@
 
 namespace memory
 {
-void write(uint8_t addr, uint8_t data);
-uint8_t read(uint8_t addr);
+int8_t write(uint8_t addr, uint8_t data);
+int16_t read(uint8_t addr);
 uint16_t mapsize();
 }
 

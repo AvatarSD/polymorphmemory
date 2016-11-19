@@ -1,121 +1,177 @@
 #include "memory.h"
 #include <avr/eeprom.h>
-
-/*
-namespace memory
-{
+#include <polymorphmemory.h>
 
 
 
-
-volatile uint8_t i2c_regs[] = {
-    "When switching between tri-state ({DDxn, PORTxn} = 0b00) and output high "
-    "({DDxn, PORTxn} = 0b11), an intermediate state with either pull-up enabled "
-    "{DDxn, PORTxn} = 0b01) or output low ({DDxn, PORTxn} = 0b10) must occur.  SD"
-};
-void write(uint8_t addr, uint8_t data)
-{
-    i2c_regs[addr] = data;
-}
-
-uint8_t read(uint8_t addr)
-{
-    return i2c_regs[addr];
-}
-
-uint16_t mapsize()
-{
-    return sizeof(i2c_regs) - 1;
-}
+#define GUID_SIZE 16
+#define ROM_SIZE 8
+#define RESERVED_SIZE 14
+#define MAX_SENSORS 20
 
 
-
-}
-*/
-
-/*
-struct Header {
-    const uint8_t GUID[16] = {0x66, 0x11, 0x70, 0x8B,
-                              0xC4, 0x76, 0x41, 0x96,
-                              0x91, 0x12, 0xA0, 0x91,
-                              0x44, 0xF0, 0xBF, 0x9C
-                             };
-    uint8_t slaveAddress;
-    uint16_t requiredTemp;
-    uint8_t sensorcount;
-    uint8_t status;
-    uint8_t control;
-};
-struct Node {
-    uint8_t rom[8];
-    uint16_t temp;
-    uint8_t status;
-};
-struct Main {
-    Header head;
-    uint8_t _res_ [14];
-    Node nodes[20];
-};
-*/
-
-template <typename Reg, typename...Regs>
-class Composite
+class GUID : public Composite<uint8_t[GUID_SIZE]>
 {
 public:
-
-    static int8_t write(uint8_t addr, uint8_t data)
+    static Error write(Address addr, uint8_t data, Num num = 0)
     {
-        return -1;
+        return ERR;
     }
-
-
-    static int16_t read(uint8_t addr)
+    static ReadType read(Address addr, Num num = 0)
     {
-        return -1;
+        static const uint8_t GUID[GUID_SIZE] = {0x66, 0x11, 0x70, 0x8B,
+                                                0xC4, 0x76, 0x41, 0x96,
+                                                0x91, 0x12, 0xA0, 0x91,
+                                                0x44, 0xF0, 0xBF, 0x9C
+                                               };
+        return GUID[addr];
+
     }
-
-
-
-
-private:
-
-    static constexpr inline size_t _size()
-    {
-        return 0;
-    }
-    template <typename Head, typename... Tail>
-    static constexpr inline size_t _size(/*const Head &
-                                         head, const Tail & ... tail*/)
-    {
-        return sizeof(Head) + _size<Head, Tail...>();  //(tail...);
-    }
-    static constexpr inline size_t size()
-    {
-        return _size<Reg, Regs...>();
-    }
-
-    uint8_t t[size()]; //_size(Reg, Regs...)];
 };
-
-template<typename Registers, size_t count>
-class CompositeList : Composite<Registers[count]>
+class SlaveAddress : public Composite<uint8_t>
 {
-
-    template<typename reg1, typename ...regs>
-    static int8_t write(uint8_t addr, uint8_t data) final {
-        return write(sizeof(reg1) % addr, data, sizeof(reg1) / addr);
+public:
+    static Error write(Address addr, uint8_t data, Num num = 0)
+    {
+        return ERR;
     }
+    static ReadType read(Address addr, Num num = 0)
+    {
+        return ERR;
+    }
+};
+class RequiredTemp : public Composite<uint16_t>
+{
+public:
+    static Error write(Address addr, uint8_t data, Num num = 0)
+    {
+        return ERR;
+    }
+    static ReadType read(Address addr, Num num = 0)
+    {
+        return ERR;
+    }
+};
+class SensorCount : public Composite<uint8_t>
+{
+public:
+    static Error write(Address addr, uint8_t data, Num num = 0)
+    {
+        return ERR;
+    }
+    static ReadType read(Address addr, Num num = 0)
+    {
+        return ERR;
+    }
+};
+class Status : public Composite<uint8_t>
+{
+public:
+    static Error write(Address addr, uint8_t data, Num num = 0)
+    {
+        return ERR;
+    }
+    static ReadType read(Address addr, Num num = 0)
+    {
+        return ERR;
+    }
+};
+class Control : public Composite<uint8_t>
+{
+public:
+    static Error write(Address addr, uint8_t data, Num num = 0)
+    {
+        return ERR;
+    }
+    static ReadType read(Address addr, Num num = 0)
+    {
+        return ERR;
+    }
+};
 
-    template<typename reg1, typename ...regs>
-    static int8_t read(uint8_t addr) final {}
+class ROM : public Composite<uint8_t[ROM_SIZE]>
+{
+public:
+    static Error write(Address addr, uint8_t data, Num num = 0)
+    {
+        return ERR;
+    }
+    static ReadType read(Address addr, Num num = 0)
+    {
+        return ERR;
+    }
+};
+class Temp : public Composite<uint16_t>
+{
+public:
+    static Error write(Address addr, uint8_t data, Num num = 0)
+    {
+        return ERR;
+    }
+    static ReadType read(Address addr, Num num = 0)
+    {
+        return ERR;
+    }
+};
+class SensorStatus : public Composite<uint8_t>
+{
+public:
+    static Error write(Address addr, uint8_t data, Num num = 0)
+    {
+        return ERR;
+    }
+    static ReadType read(Address addr, Num num = 0)
+    {
+        return ERR;
+    }
+};
 
-
+class _res_ : public Composite<uint8_t[RESERVED_SIZE]>
+{
+public:
+    static Error write(Address addr, uint8_t data, Num num = 0)
+    {
+        return ERR;
+    }
+    static ReadType read(Address addr, Num num = 0)
+    {
+        return ERR;
+    }
 };
 
 
+
+
+
+
+class Node : public Composite<ROM, Temp, SensorStatus> {};
+class Nodes : public CompositeList<Node, MAX_SENSORS> {};
+class Header : public
+    Composite<GUID, SlaveAddress, RequiredTemp, SensorCount, Status, Control> {};
+
+class MainMem : public Composite<Header, _res_, Nodes> {};
+
+
+static_assert(sizeof(MainMem) == 256, "MainMen is not 256bytes in size");
 
 /*
-Main eemap EEMEM;
+int8_t memory::write(uint8_t addr, uint8_t data)
+{
+    return MainMem::write(addr, data);
+}
+
+int16_t memory::read(uint8_t addr)
+{
+    return MainMem::read(addr);
+}
+
+uint16_t memory::mapsize()
+{
+    return sizeof(MainMem);
+}
+*/
+
+/*Main eemap EEMEM;
 
 //volatile uint8_t i2c_regs[] = {
 //    "When switching between tri-state ({DDxn, PORTxn} = 0b00) and output high "
@@ -138,8 +194,7 @@ uint16_t memory::mapsize()
 }
 */
 
-
-void memory::write(uint8_t addr, uint8_t data)
+/*void memory::write(uint8_t addr, uint8_t data)
 {
     //eeprom_write_byte((uint8_t *)&eemap + addr, data);
 }
@@ -152,4 +207,26 @@ uint8_t memory::read(uint8_t addr)
 uint16_t memory::mapsize()
 {
     return 10;
+}
+*/
+
+volatile uint8_t i2c_regs[] = {
+    "When switching between tri-state ({DDxn, PORTxn} = 0b00) and output high "
+    "({DDxn, PORTxn} = 0b11), an intermediate state with either pull-up enabled "
+    "{DDxn, PORTxn} = 0b01) or output low ({DDxn, PORTxn} = 0b10) must occur.  SD"
+};
+int8_t memory::write(uint8_t addr, uint8_t data)
+{
+    i2c_regs[addr] = data;
+    return 0;
+}
+
+int16_t memory::read(uint8_t addr)
+{
+    return i2c_regs[addr];
+}
+
+uint16_t memory::mapsize()
+{
+    return sizeof(i2c_regs) - 1;
 }
