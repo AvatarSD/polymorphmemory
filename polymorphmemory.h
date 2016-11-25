@@ -2,6 +2,7 @@
 #define POLYMORPHMEMORY_H
 
 #include <inttypes.h>
+#include <stddef.h>
 
 
 #define OK 0
