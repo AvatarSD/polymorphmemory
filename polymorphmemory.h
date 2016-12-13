@@ -17,9 +17,43 @@ typedef int16_t ReadType;
 //} ReadType;
 
 
+//class CompositeBase{};
+
+
+
+template<typename Var, typename ... Vars>
+class VarKeeper
+{
+public:
+	Var var;
+	VarKeeper<Vars...> vars;
+
+	constexpr inline size_t varsLeft()
+	{
+		return sizeof...(Vars);
+	}
+};
+
+template<typename Var>
+class VarKeeper<Var>
+{
+public:
+	Var var;
+
+	constexpr inline size_t varsLeft()
+	{
+		return 0;
+	}
+};
+
+
+
+
+
+
 
 template <typename Reg, typename...Regs>
-class Composite //: Reg, Regs...
+class Composite // : CompositeBase
 {
 public:
 	static Error write(Address addr, uint8_t data, Num num = 0)
@@ -32,58 +66,91 @@ public:
 		return _read<Reg, Regs...>(addr, num);
 	}
 
+	static constexpr inline size_t size()
+	{
+		return _size<Reg, Regs...>();
+	}
+
 
 private:
+
+	template <typename Tail>
+	static constexpr inline size_t _size()
+	{
+		return Tail::size();
+	}
+	template <typename Head, typename Mid, typename... Tail>
+	static constexpr inline size_t _size()
+	{
+		return Head::size() + _size<Mid, Tail...>();
+	}
+
+
+
+
 
 	template<typename Tail>
 	static inline Error _write(Address addr, uint8_t data, Num num = 0)
 	{
-		if(sizeof(Tail) > addr) return Tail::write(addr, data, num);
+		if(Tail::size() > addr) return Tail::write(addr, data, num);
 		return ERR;
 	}
 	template<typename Head, typename Mid, typename... Tail>
 	static inline Error _write(Address addr, uint8_t data, Num num = 0)
 	{
-		if(sizeof(Head) > addr) return Head::write(addr, data, num);
-		addr -= sizeof(Head);
+		if(Head::size() > addr) return Head::write(addr, data, num);
+		addr -= Head::size();
 		return _write<Mid, Tail...>(addr, data, num);
 	}
 
 	template<typename Tail>
 	static inline ReadType _read(Address addr, uint8_t num = 0)
 	{
-		if(sizeof(Tail) > addr) return Tail::read(addr, num);
+		if(Tail::size() > addr) return Tail::read(addr, num);
 		return ERR;
 	}
 	template<typename Head, typename Mid, typename... Tail>
 	static inline ReadType _read(Address addr, uint8_t num = 0)
 	{
-		if(sizeof(Head) > addr) return Head::read(addr, num);
-		addr -= sizeof(Head);
+		if(Head::size() > addr) return Head::read(addr, num);
+		addr -= Head::size();
 		return _read<Mid, Tail...>(addr, num);
 	}
 
 
-	template <typename Tail>
-	static constexpr inline size_t _size()
-	{
-		return sizeof(Tail);
-	}
-	template <typename Head, typename Mid, typename... Tail>
-	static constexpr inline size_t _size()
-	{
-		return sizeof(Head) + _size<Mid, Tail...>();
-	}
-	static constexpr inline size_t size()
-	{
-		return _size<Reg, Regs...>();
-	}
 
-	const uint8_t node[size()];
 
-	Composite() = default;
-	Composite(const Composite &) {}
-	Composite & operator = (const Composite &) = default;
+
+
+
+
+
+
+
+	/*add declarations of template args*/
+	//VarKeeper<Reg, Regs...> vars;
+
+
+
+
+
+//	template <typename Var>
+//	Var & getVar(Address addr, uint8_t num = 0)
+//	{
+//		if(vars.var::size() > addr) return vars.var;
+//		addr -= vars.var::size();
+//		return getVar(addr, num);
+//	}
+
+
+
+
+
+	//  const uint8_t node[size()];
+
+	//  Composite() = default;
+	//  Composite(const Composite &) {}
+	//  Composite & operator = (const Composite &) = default;
 };
 
 template<typename RegisterComposite, size_t count>
@@ -93,19 +160,19 @@ public:
 	static Error write(Address addr, uint8_t data, Num num)
 	{
 		calcNum(num, addr);
-		return RegisterComposite::write(addr % sizeof(RegisterComposite), data, num);
+		return RegisterComposite::write(addr % RegisterComposite::size(), data, num);
 	}
 	static ReadType read(Address addr, Num num)
 	{
 		calcNum(num, addr);
-		return RegisterComposite::read(addr % sizeof(RegisterComposite), num);
+		return RegisterComposite::read(addr % RegisterComposite::size(), num);
 	}
 
 private:
 	static inline void calcNum(Num & num, const Address & addr)
 	{
-		num *= (sizeof(RegisterComposite) * count);
-		num += addr / sizeof(RegisterComposite);
+		num *= (RegisterComposite::size() * count);
+		num += addr / RegisterComposite::size();
 	}
 };
 
