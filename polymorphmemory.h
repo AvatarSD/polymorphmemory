@@ -16,8 +16,26 @@ typedef int16_t ReadType;
 //  Error err;
 //} ReadType;
 
+/*
+class IComposite
+{
+public:
+	virtual constexpr inline Error write(Address addr, uint8_t data, Num num = 0)
+	{
+		return ERR;
+	}
 
-//class CompositeBase{};
+	virtual constexpr inline ReadType read(Address addr, Num num = 0)
+	{
+		return ERR;
+	}
+
+	virtual constexpr inline size_t size()
+	{
+		return 0;
+	}
+
+};*/
 
 
 
@@ -53,27 +71,28 @@ public:
 
 
 template <typename Reg, typename...Regs>
-class Composite // : CompositeBase
+class Composite //: public IComposite
 {
 public:
-	static Error write(Address addr, uint8_t data, Num num = 0)
-	{
-		return _write<Reg, Regs...>(addr, data, num);
-	}
+	  Error write(Address addr, uint8_t data, Num num = 0)
+	  {
+		  return this->getVar(addr, num)->write(addr, data, num);
+	  }
 
-	static ReadType read(Address addr, Num num = 0)
-	{
-		return _read<Reg, Regs...>(addr, num);
-	}
+	  ReadType read(Address addr, Num num = 0)
+	  {
+		  return this->getVar(addr, num)->read(addr, num);
+	  }
 
-	static constexpr inline size_t size()
-	{
-		return _size<Reg, Regs...>();
-	}
+	  constexpr inline size_t size()
+	  {
+		  return 0;//_size<Reg, Regs...>();
+	  }
 
 
 private:
 
+	/*
 	template <typename Tail>
 	static constexpr inline size_t _size()
 	{
@@ -83,93 +102,76 @@ private:
 	static constexpr inline size_t _size()
 	{
 		return Head::size() + _size<Mid, Tail...>();
-	}
+	}*/
 
 
+	/*
+		template<typename Tail>
+		static inline Error _write(Address addr, uint8_t data, Num num = 0)
+		{
+			if(Tail::size() > addr) return Tail::write(addr, data, num);
+			return ERR;
+		}
+		template<typename Head, typename Mid, typename... Tail>
+		static inline Error _write(Address addr, uint8_t data, Num num = 0)
+		{
+			if(Head::size() > addr) return Head::write(addr, data, num);
+			addr -= Head::size();
+			return _write<Mid, Tail...>(addr, data, num);
+		}
 
+		template<typename Tail>
+		static inline ReadType _read(Address addr, uint8_t num = 0)
+		{
+			if(Tail::size() > addr) return Tail::read(addr, num);
+			return ERR;
+		}
+		template<typename Head, typename Mid, typename... Tail>
+		static inline ReadType _read(Address addr, uint8_t num = 0)
+		{
+			if(Head::size() > addr) return Head::read(addr, num);
+			addr -= Head::size();
+			return _read<Mid, Tail...>(addr, num);
+		}
 
-
-	template<typename Tail>
-	static inline Error _write(Address addr, uint8_t data, Num num = 0)
-	{
-		if(Tail::size() > addr) return Tail::write(addr, data, num);
-		return ERR;
-	}
-	template<typename Head, typename Mid, typename... Tail>
-	static inline Error _write(Address addr, uint8_t data, Num num = 0)
-	{
-		if(Head::size() > addr) return Head::write(addr, data, num);
-		addr -= Head::size();
-		return _write<Mid, Tail...>(addr, data, num);
-	}
-
-	template<typename Tail>
-	static inline ReadType _read(Address addr, uint8_t num = 0)
-	{
-		if(Tail::size() > addr) return Tail::read(addr, num);
-		return ERR;
-	}
-	template<typename Head, typename Mid, typename... Tail>
-	static inline ReadType _read(Address addr, uint8_t num = 0)
-	{
-		if(Head::size() > addr) return Head::read(addr, num);
-		addr -= Head::size();
-		return _read<Mid, Tail...>(addr, num);
-	}
-
-
-
-
-
-
-
+	*/
 
 
 
 
 	/*add declarations of template args*/
-	//VarKeeper<Reg, Regs...> vars;
+	VarKeeper<Reg, Regs...> vars;
 
+	//IComposite vars[sizeof...(Regs)+1];
 
+	template <typename Var>
+	Var * getVar(Address addr, uint8_t num = 0)
+	{
+		for(uint8_t i = 0; i > 0; i++) {
+			if(vars.var.size() > addr) continue;
+			addr -= vars.var.size();
+			return getVar(addr, num);
+		}
+		return nullptr;
+	}
 
-
-
-//	template <typename Var>
-//	Var & getVar(Address addr, uint8_t num = 0)
-//	{
-//		if(vars.var::size() > addr) return vars.var;
-//		addr -= vars.var::size();
-//		return getVar(addr, num);
-//	}
-
-
-
-
-
-	//  const uint8_t node[size()];
-
-	//  Composite() = default;
-	//  Composite(const Composite &) {}
-	//  Composite & operator = (const Composite &) = default;
 };
 
 template<typename RegisterComposite, size_t count>
 class CompositeList : Composite<RegisterComposite[count]>
 {
 public:
-	static Error write(Address addr, uint8_t data, Num num)
-	{
+	Error write(Address addr, uint8_t data, Num num) final {
 		calcNum(num, addr);
 		return RegisterComposite::write(addr % RegisterComposite::size(), data, num);
 	}
-	static ReadType read(Address addr, Num num)
-	{
+	ReadType read(Address addr, Num num) final {
 		calcNum(num, addr);
 		return RegisterComposite::read(addr % RegisterComposite::size(), num);
 	}
 
 private:
-	static inline void calcNum(Num & num, const Address & addr)
+	inline void calcNum(Num & num, const Address & addr)
 	{
 		num *= (RegisterComposite::size() * count);
 		num += addr / RegisterComposite::size();
