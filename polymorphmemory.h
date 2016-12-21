@@ -32,6 +32,10 @@ public:
 		return _read<Reg, Regs...>(addr, num);
 	}
 
+	static constexpr inline size_t size()
+	{
+		return _size<Reg, Regs...>();
+	}
 
 private:
 
@@ -73,10 +77,6 @@ private:
 	static constexpr inline size_t _size()
 	{
 		return sizeof(Head) + _size<Mid, Tail...>();
-	}
-	static constexpr inline size_t size()
-	{
-		return _size<Reg, Regs...>();
 	}
 
 	const uint8_t node[size()];
