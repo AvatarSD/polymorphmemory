@@ -77,7 +77,7 @@ private:
 };
 
 
-class CompositeList : IMemory
+class CompositeList : public IMemory
 {
 public:
 	CompositeList(IMemory * reg, size_t count) : reg(reg), count(count) {}
