@@ -16,98 +16,97 @@ typedef int16_t ReadType;
 //  Error err;
 //} ReadType;
 
+class IMemory
+{
+public:
+	virtual Error write(Address addr, uint8_t data, Num num = 0);
+	virtual ReadType read(Address addr, Num num = 0);
+	virtual size_t size();
+};
 
 
 template <typename Reg, typename...Regs>
-class Composite //: Reg, Regs...
+class Composite : public IMemory
 {
 public:
-	static Error write(Address addr, uint8_t data, Num num = 0)
+
+	Composite(Reg * reg, Regs * ...regs)
 	{
-		return _write<Reg, Regs...>(addr, data, num);
+		nodes[0] = reg;
+		init(1, regs...);
 	}
 
-	static ReadType read(Address addr, Num num = 0)
+	Error write(Address addr, uint8_t data, Num num = 0) final
 	{
-		return _read<Reg, Regs...>(addr, num);
+		for(uint8_t i = 0; i < nodessize; i++) {
+			if(nodes[i]->size() > addr) return nodes[i]->write(addr, data, num);
+			addr -= nodes[i]->size();
+		}
+		return ERR;
 	}
-
-	static constexpr inline size_t size()
+	ReadType read(Address addr, Num num = 0) final
 	{
-		return _size<Reg, Regs...>();
+		for(uint8_t i = 0; i < nodessize; i++) {
+			if(nodes[i]->size() > addr) return nodes[i]->read(addr, num);
+			addr -= nodes[i]->size();
+		}
+		return ERR;
+	}
+	size_t size() final
+	{
+		size_t size = 0;
+		for(uint8_t i = 0; i < nodessize; i++)
+			size += nodes[i]->size();
+		return size;
 	}
 
 private:
-
-	template<typename Tail>
-	static inline Error _write(Address addr, uint8_t data, Num num = 0)
+	template <typename TReg, typename...TRegs>
+	void init(uint8_t num, TReg * reg, TRegs * ...regs)
 	{
-		if(sizeof(Tail) > addr) return Tail::write(addr, data, num);
-		return ERR;
+		nodes[num] = reg;
+		init(++num, regs...);
 	}
-	template<typename Head, typename Mid, typename... Tail>
-	static inline Error _write(Address addr, uint8_t data, Num num = 0)
-	{
-		if(sizeof(Head) > addr) return Head::write(addr, data, num);
-		addr -= sizeof(Head);
-		return _write<Mid, Tail...>(addr, data, num);
-	}
+	void init(uint8_t num) {}
+	static constexpr size_t nodessize = sizeof...(Regs) + 1;
+	IMemory * nodes[nodessize];
 
-	template<typename Tail>
-	static inline ReadType _read(Address addr, uint8_t num = 0)
-	{
-		if(sizeof(Tail) > addr) return Tail::read(addr, num);
-		return ERR;
-	}
-	template<typename Head, typename Mid, typename... Tail>
-	static inline ReadType _read(Address addr, uint8_t num = 0)
-	{
-		if(sizeof(Head) > addr) return Head::read(addr, num);
-		addr -= sizeof(Head);
-		return _read<Mid, Tail...>(addr, num);
-	}
-
-
-	template <typename Tail>
-	static constexpr inline size_t _size()
-	{
-		return sizeof(Tail);
-	}
-	template <typename Head, typename Mid, typename... Tail>
-	static constexpr inline size_t _size()
-	{
-		return sizeof(Head) + _size<Mid, Tail...>();
-	}
-
-	const uint8_t node[size()];
-
-	Composite() = default;
 	Composite(const Composite &) {}
 	Composite & operator = (const Composite &) = default;
+
 };
 
-template<typename RegisterComposite, size_t count>
-class CompositeList : Composite<RegisterComposite[count]>
+
+class CompositeList : IMemory
 {
 public:
-	static Error write(Address addr, uint8_t data, Num num)
-	{
-		calcNum(num, addr);
-		return RegisterComposite::write(addr % sizeof(RegisterComposite), data, num);
+	CompositeList(IMemory * reg, size_t count) : reg(reg), count(count) {}
+
+	Error write(Address addr, uint8_t data, Num num) final {
+		calcNum(num, addr); //fixme
+		return reg->write(addr % reg->size(), data, num);
 	}
-	static ReadType read(Address addr, Num num)
-	{
+	ReadType read(Address addr, Num num) final {
 		calcNum(num, addr);
-		return RegisterComposite::read(addr % sizeof(RegisterComposite), num);
+		return reg->read(addr % reg->size(), num);
+	}
+	size_t size() final
+	{
+		return reg->size() * count;
 	}
 
 private:
-	static inline void calcNum(Num & num, const Address & addr)
+	IMemory * reg;
+	size_t count;
+
+	inline void calcNum(Num & num, const Address & addr)
 	{
-		num *= (sizeof(RegisterComposite) * count);
-		num += addr / sizeof(RegisterComposite);
+		num *= (reg->size() * count);
+		num += addr / reg->size();
 	}
 };
+
+
 
 
 #endif // POLYMORPHMEMORY_H
