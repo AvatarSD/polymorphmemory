@@ -32,23 +32,23 @@ public:
 
 	Composite(Reg * reg, Regs * ...regs)
 	{
-		nodes[0] = reg;
+		_nodes[0] = reg;
 		init(1, regs...);
 	}
 
 	Error write(Address addr, uint8_t data, Num num = 0) final
 	{
 		for(uint8_t i = 0; i < nodessize; i++) {
-			if(nodes[i]->size() > addr) return nodes[i]->write(addr, data, num);
-			addr -= nodes[i]->size();
+			if(_nodes[i]->size() > addr) return _nodes[i]->write(addr, data, num);
+			addr -= _nodes[i]->size();
 		}
 		return ERR;
 	}
 	ReadType read(Address addr, Num num = 0) final
 	{
 		for(uint8_t i = 0; i < nodessize; i++) {
-			if(nodes[i]->size() > addr) return nodes[i]->read(addr, num);
-			addr -= nodes[i]->size();
+			if(_nodes[i]->size() > addr) return _nodes[i]->read(addr, num);
+			addr -= _nodes[i]->size();
 		}
 		return ERR;
 	}
@@ -56,7 +56,7 @@ public:
 	{
 		size_t size = 0;
 		for(uint8_t i = 0; i < nodessize; i++)
-			size += nodes[i]->size();
+			size += _nodes[i]->size();
 		return size;
 	}
 
@@ -64,12 +64,12 @@ private:
 	template <typename TReg, typename...TRegs>
 	void init(uint8_t num, TReg * reg, TRegs * ...regs)
 	{
-		nodes[num] = reg;
+		_nodes[num] = reg;
 		init(++num, regs...);
 	}
 	void init(uint8_t num) {}
 	static constexpr size_t nodessize = sizeof...(Regs) + 1;
-	IMemory * nodes[nodessize];
+	IMemory * _nodes[nodessize];
 
 	Composite(const Composite &) {}
 	Composite & operator = (const Composite &) = default;
